@@ -1,11 +1,11 @@
 //just kidding this is the actual one
 
-void setup()
+void setup() // set up the electronics
 {
   // code
 }
 
-void loop() 
+void loop() // continous check to use by electronics
 { 
   // code
 }
