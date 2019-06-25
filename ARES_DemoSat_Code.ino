@@ -106,22 +106,8 @@ Updated 01/04/2017 for OpenLog
 void setup() 
 {
   Serial.begin(9600);
-
-  /*
-   Temperature Sensor Setup
-  */
-
-  /*
-   Pressure Sensor Setup
-  */
-
-  /*
-   Hummidty Sensor Setup
-  */
-
-  /*
-   Accelerameter  Setup
-  */
+ 
+  Serial.println("Header for sensors")
 
   /*
    Switch Setup
@@ -154,7 +140,7 @@ void loop()
   double Rs;
   for(int average = 1; average <= 500; average++)
   {
-    analog_value = analog_value + analogRead(0);
+    analog_value = analog_value + analogRead(0); ////////////////////// ANALOG
   }
   analog_value = analog_value/500;
   
@@ -177,7 +163,7 @@ void loop()
   double RsB; 
   for (int ave = 1; ave <= 500; ave++)
   {
-    analog_valueB = analog_valueB + analogRead(1);
+    analog_valueB = analog_valueB + analogRead(1); ////////////////////// ANALOG
   }
   analog_valueB = analog_valueB/500;
 
@@ -200,18 +186,73 @@ void loop()
   /*
    Temperature Sensor Loop
   */
+ // Temp Sensor A
+ temp1 = analogRead(0); ////////////////////// ANALOG
+ temp1Volt = temp1*(5.0/1023);
+ temp1C = (temp1Volt - 0.5)/(0.01);
+ temp1F = (temp1C*(9.0/5.0) + 32);
+ //Serial.print(",");    
+ //Serial.print(temp1F, 2);
+ 
+ // Temp Sensor B 
+ temp2 = analogRead(1); ////////////////////// ANALOG
+ temp2Volt = temp2*(5.0/1023);
+ temp2C = (temp2Volt - 0.5)/(0.01);
+ temp2F = (temp2C*(9.0/5.0) + 32);
+ //Serial.print(",")
+ //Serial.print(temp2F, 2);
 
   /*
    Pressure Sensor Loop
   */
-
+ 
+ // Pressure Sensor A
+ pressureA = analogRead(3); ////////////////////// ANALOG
+ pressureVoltA = pressureA*(5.0/1023);
+ psiA = (pressureVoltB - 0.5)*(15.0/4.0);
+ //Serial.print(",");    
+ //Serial.print(psiA, 2);
+ 
+ 
+ // Pressure Sensor B 
+ pressureB = analogRead(3); ////////////////////// ANALOG
+ pressureVoltB = pressureB*(5.0/1023);
+ psiB = (pressureVoltB - 0.5)*(15.0/4.0);
+ //Serial.print(",");    
+ //Serial.print(psiB, 2);
+ 
   /*
    Hummidty Sensor Loop
   */
-
+ humidity = analogRead(2); ////////////////////// ANALOG
+ humidityVolt = humidity*(5.0/1023);
+ RH = (((humidityVolt/5.0)-0.16)/0.0062);
+ //Serial.print(",");    
+ //Serial.print(RH, 2);
+ 
   /*
    Accelerameter  Loop
   */
+ // X Accel
+ accelX = analogRead(4); ////////////////////// ANALOG
+ accelXVolt = accelX*(5.0/1023);
+ accelXG = (accelXVolt - (3.3/2))/(0.330);
+ //Serial.print(",");    
+ //Serial.print(accelXG,3);
+ 
+ // Y Accel
+ accelY = analogRead(4); ////////////////////// ANALOG
+ accelYVolt = accelY*(5.0/1023);
+ accelYG = (accelYVolt - (3.3/2))/(0.330);
+ //Serial.print(",");    
+ //Serial.print(accelXG,3);
+ 
+ // Z Accel
+ accelZ = analogRead(4); ////////////////////// ANALOG
+ accelZVolt = accelZ*(5.0/1023);
+ accelZG = (accelZVolt - (3.3/2))/(0.330);
+ //Serial.print(",");    
+ //Serial.print(accelXG,3);
 
   /*
    Switch Loop
