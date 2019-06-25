@@ -13,6 +13,8 @@ Updated 01/04/2017 for OpenLog
 /// Libraries
 #include <Wire.h>
 #include "RTClib.h"
+#include <SPI.h>
+#include <SD.h>
 
 
 /// Definitions
@@ -111,6 +113,9 @@ Updated 01/04/2017 for OpenLog
    SD Card Definitions
   */
 
+String Textfile = "balloon.txt";
+File myFile; //can name this whatever, and you can add more files but that might get complicated
+
   /*
    Battery Gauge Definitions
   */
@@ -151,6 +156,28 @@ void setup()
   /*
    SD Card Setup
   */
+ // put your setup code here, to run once:
+      while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(4)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
+
+// Print Column Headers
+      myFile = SD.open(Textfile, FILE_WRITE);
+      
+      if (myFile) {
+      Serial.println("Data Opened...");
+      }
+      else {
+        Serial.println("Failed to Open File");
+      }
+  
 
   /*
    Battery Gauge Setup
@@ -338,6 +365,20 @@ void loop()
   /*
    SD Card Loop
   */
+
+// open file
+      myFile = SD.open(Textfile, FILE_WRITE);
+
+//   put your main code here, to run repeatedly:
+///////////////////////////////////////////////////////
+//use myFile.print() wherever you want to save to SD -- Works the same as Serial.print()
+
+
+
+
+
+//////////////////////////////////////////////////////
+     myFile.close();
 
   /*
    Battery Gauge Loop
