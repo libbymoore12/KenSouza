@@ -1,16 +1,16 @@
-int Rl = 47; // Load resistance used in circuti
+double Rl = 47; // Load resistance used in circuti
 double ratio = 3.6; // Ratio of Rs/Ro
-int Vc = 5; // Input Voltage
+double Vc = 5; // Input Voltage
 double b = 0.482587; // intercept based on MQ137 Datasheet
 double m = -0.292481; // slope based on MQ137 Datasheet 
-double Ro = 192.42; 
-// 
-int Rl135 = 20; // Load resistance used in circuit for MQ135
+double Ro = 230; 
+ 
+double Rl135 = 20; // Load resistance used in circuit for MQ135
 double ratio135 = 3.7; // Ratio of Rs/Ro for MQ135
-int Vc135 = 5; // Input Voltage
+double Vc135 = 5; // Input Voltage
 double b135 = 0.971; // Intercept based on MQ135
 double m135 = -0.48531; // slope based on MQ135
-double Ro135 = 126.25; 
+double Ro135 = 177.15; 
 
 void setup() 
 {
@@ -20,9 +20,9 @@ void setup()
 
 void loop() 
 {
-  int analog_value = 0;
-  float VRL;
-  float Rs;
+  double analog_value = 0;
+  double VRL;
+  double Rs;
   for(int average = 1; average <= 500; average++)
   {
     analog_value = analog_value + analogRead(0);
@@ -37,9 +37,9 @@ void loop()
   //Serial.print("MQ137 Ro: ");
   //Serial.println(Ro);
 
-    int analog_value135 = 0;
-  float VRL135; 
-  float Rs135; 
+  double analog_value135 = 0;
+  double VRL135; 
+  double Rs135; 
   for (int ave = 1; ave <= 500; ave++)
   {
     analog_value135 = analog_value135 + analogRead(1);
@@ -61,7 +61,7 @@ void loop()
   
   // Get PPM MQ135
   double PPM135 = pow(10, ((log10(Rs135/Ro135)-b135)/m135));//use formula to calculate ppm
-  Serial.print("Sam Ammonia PPM: ");
+  Serial.print("Sam Air Quiality: ");
   Serial.println(PPM135);
   Serial.println();
   
