@@ -31,7 +31,7 @@ Updated 01/04/2017 for OpenLog
   double m = -0.292481; // slope based on MQ137 Datasheet 
   double Ro = 230; 
 
-  // Sammie (MQ137 B Sensor - Cracked) 
+  // Trevor (MQ137 B Sensor - Cracked) 
   double RlB = 20; // Load resistance used in circuit
   double ratioB = 3.7; // Ratio of Rs/Ro
   double VcB = 5; // Input Voltage
