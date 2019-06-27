@@ -218,7 +218,7 @@ void loop()
     DateTime now = rtc.now();
     
 
-    if(now.month() == 7 && now.day() == 27 && now.hour() >= 6)
+    if(now.month() == 6 && now.day() == 27 && now.hour() >= 6)
     {
 
           ///Ammonia Sensor Loop
