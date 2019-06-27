@@ -15,6 +15,7 @@ Updated 01/04/2017 for OpenLog
 #include "RTClib.h"
 #include <SPI.h>
 #include <SD.h>
+#include "MAX17043.h"
 
 
 /// Definitions
@@ -94,10 +95,6 @@ Updated 01/04/2017 for OpenLog
     float accelZG;
 
   /*
-   Switch Definitions
-  */
-
-  /*
    Clock Definitions
   */
      #if defined(ARDUINO_ARCH_SAMD)
@@ -113,22 +110,22 @@ Updated 01/04/2017 for OpenLog
    SD Card Definitions
   */
 
-String Textfile = "balloon.txt";
+String Textfile = "DemoSat.txt";
 File myFile; //can name this whatever, and you can add more files but that might get complicated
+
+uint32_t timeStamp = 0;
 
   /*
    Battery Gauge Definitions
   */
 
+  MAX17043 batteryMonitor;
+
 void setup() 
 {
+  Wire.begin();
   Serial.begin(9600);
  
-  Serial.println("Header for sensors");
-
-  /*
-   Switch Setup
-  */
 
   /*
    Clock Setup
@@ -177,194 +174,202 @@ void setup()
       else {
         Serial.println("Failed to Open File");
       }
-  
 
-  /*
-   Battery Gauge Setup
-  */
+  Serial.println("Time, Battery (%), Tina (PPM), Trevor (PPM), TempA (F), TempB (F), PressA (psi), PressB (psi), Hum (%?), AccelX (m/s^2), AccelY (m/s^2), AccelZ (m/s^2)");
 }
 
 void loop() 
 {
-  
-  /*
-   Ammonia Sensor Loop
-  */
 
-  /// Tina
-  double analog_value = 0;
-  double VRL;
-  double Rs;
-  for(int average = 1; average <= 500; average++)
-  {
-    analog_value = analog_value + analogRead(0); ////////////////////// ANALOG
-  }
-  analog_value = analog_value/500;
-  
-  VRL = analog_value*(5.0/1023); // convert analog readings to voltage
-  Rs = ((Vc*Rl)/VRL) - Rl; // compute Rs using the formula from the website 
+/// SD Card Loop
 
-  // Calibrate MQ137; do in clean air then apply ammonia
-  //Ro = Rs/ratio;
-  //Serial.print("MQ137 Ro: ");
-  //Serial.println(Ro);
+  myFile = SD.open(Textfile, FILE_WRITE);
+  //use myFile.print() wherever you want to save to SD -- Works the same as Serial.print()
 
-  // Get PPM MQ137
-  double PPM = pow(10, ((log10(Rs/Ro)-b)/m));//use formula to calculate ppm
-  Serial.print("Tina Ammtonia PPM: ");
-  Serial.println(PPM);
+  // Time Loop
 
-  /// Sammie
-  double analog_valueB = 0;
-  double VRLB; 
-  double RsB; 
-  for (int ave = 1; ave <= 500; ave++)
-  {
-    analog_valueB = analog_valueB + analogRead(1); ////////////////////// ANALOG
-  }
-  analog_valueB = analog_valueB/500;
+  timeStamp = millis(); 
 
-  VRLB = analog_valueB*(5.0/1023); // convert analog readings to voltage
-  RsB = ((VcB*RlB)/VRLB) - RlB; // compute Rs using the formula from the website
+  Serial.print(timeStamp);
+  Serial.print(", ");
 
-  // Calibrate MQ135; do in clean air then apply ammonia
-  //RoB = RsB/ratioB;
-  //Serial.print("MQ135 Ro: ");
-  //Serial.println(RoB);
+  myFile.print(timeStamp);
+  myFile.print(", ");
 
-  // Get PPM MQ135
-  double PPMB = pow(10, ((log10(RsB/RoB)-bB)/mB));//use formula to calculate ppm
-  Serial.print("Sam Air Quiality: ");
-  Serial.println(PPMB);
-  Serial.println();
 
-  delay(1000);
+///Battery Gauge Loop
 
-  /*
-   Temperature Sensor Loop
-  */
- // Temp Sensor A
- temp1 = analogRead(0); ////////////////////// ANALOG
- temp1Volt = temp1*(5.0/1023);
- temp1C = (temp1Volt - 0.5)/(0.01);
- temp1F = (temp1C*(9.0/5.0) + 32);
- //Serial.print(",");    
- //Serial.print(temp1F, 2);
- 
- // Temp Sensor B 
- temp2 = analogRead(1); ////////////////////// ANALOG
- temp2Volt = temp2*(5.0/1023);
- temp2C = (temp2Volt - 0.5)/(0.01);
- temp2F = (temp2C*(9.0/5.0) + 32);
- //Serial.print(",")
- //Serial.print(temp2F, 2);
+  batteryMonitor.reset();
+  batteryMonitor.quickStart();
 
-  /*
-   Pressure Sensor Loop
-  */
- 
- // Pressure Sensor A
- pressureA = analogRead(3); ////////////////////// ANALOG
- pressureVoltA = pressureA*(5.0/1023);
- psiA = (pressureVoltB - 0.5)*(15.0/4.0);
- //Serial.print(",");    
- //Serial.print(psiA, 2);
- 
- 
- // Pressure Sensor B 
- pressureB = analogRead(3); ////////////////////// ANALOG
- pressureVoltB = pressureB*(5.0/1023);
- psiB = (pressureVoltB - 0.5)*(15.0/4.0);
- //Serial.print(",");    
- //Serial.print(psiB, 2);
- 
-  /*
-   Hummidty Sensor Loop
-  */
- humidity = analogRead(2); ////////////////////// ANALOG
- humidityVolt = humidity*(5.0/1023);
- RH = (((humidityVolt/5.0)-0.16)/0.0062);
- //Serial.print(",");    
- //Serial.print(RH, 2);
- 
-  /*
-   Accelerameter  Loop
-  */
- // X Accel
- accelX = analogRead(4); ////////////////////// ANALOG
- accelXVolt = accelX*(5.0/1023);
- accelXG = (accelXVolt - (3.3/2))/(0.330);
- //Serial.print(",");    
- //Serial.print(accelXG,3);
- 
- // Y Accel
- accelY = analogRead(4); ////////////////////// ANALOG
- accelYVolt = accelY*(5.0/1023);
- accelYG = (accelYVolt - (3.3/2))/(0.330);
- //Serial.print(",");    
- //Serial.print(accelXG,3);
- 
- // Z Accel
- accelZ = analogRead(4); ////////////////////// ANALOG
- accelZVolt = accelZ*(5.0/1023);
- accelZG = (accelZVolt - (3.3/2))/(0.330);
- //Serial.print(",");    
- //Serial.print(accelXG,3);
+  float stateOfCharge = batteryMonitor.getSoC();
 
-  /*
-   Switch Loop
-  */
+  Serial.print(stateOfCharge);
+  Serial.print(", ");
 
-  /*
-   Clock Loop
-  */
+  myFile.print(stateOfCharge);
+  myFile.print(", ");
+
+
+
+///Clock Loop
+
  
     DateTime now = rtc.now();
     
-    Serial.print(now.year(), DEC);
-    Serial.print('/');
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print(" (");
-    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
-    Serial.print(") ");
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    Serial.print(now.minute(), DEC);
-    Serial.print(':');
-    Serial.print(now.second(), DEC);
-    Serial.println();
-    
-    Serial.print(" since midnight 1/1/1970 = ");
-    Serial.print(now.unixtime());
-    Serial.print("s = ");
-    Serial.print(now.unixtime() / 86400L);
-    Serial.println("d");
-    
-    Serial.println();
-    delay(3000);
 
-  /*
-   SD Card Loop
-  */
+    if(now.month() == 7 && now.day() == 27 && now.hour() >= 6)
+    {
 
-// open file
-      myFile = SD.open(Textfile, FILE_WRITE);
+          ///Ammonia Sensor Loop
+          
+            /// Tina
+            double analog_value = 0;
+            double VRL;
+            double Rs;
+            for(int average = 1; average <= 500; average++)
+            {
+              analog_value = analog_value + analogRead(13); ////////////////////// ANALOG
+            }
+            analog_value = analog_value/500;
+            
+            VRL = analog_value*(5.0/1023); // convert analog readings to voltage
+            Rs = ((Vc*Rl)/VRL) - Rl; // compute Rs using the formula from the website 
+          
+            // Calibrate MQ137; do in clean air then apply ammonia
+            //Ro = Rs/ratio;
+            //Serial.print("MQ137 Ro: ");
+            //Serial.println(Ro);
+          
+            // Get PPM MQ137
+            double PPM = pow(10, ((log10(Rs/Ro)-b)/m));//use formula to calculate ppm
+            Serial.print(PPM);
+            Serial.print(", ");
 
-//   put your main code here, to run repeatedly:
-///////////////////////////////////////////////////////
-//use myFile.print() wherever you want to save to SD -- Works the same as Serial.print()
+            myFile.print(PPM);
+            myFile.print(", ");
+          
+            /// Trevor
+            double analog_valueB = 0;
+            double VRLB; 
+            double RsB; 
+            for (int ave = 1; ave <= 500; ave++)
+            {
+              analog_valueB = analog_valueB + analogRead(0); ////////////////////// ANALOG
+            }
+            analog_valueB = analog_valueB/500;
+          
+            VRLB = analog_valueB*(5.0/1023); // convert analog readings to voltage
+            RsB = ((VcB*RlB)/VRLB) - RlB; // compute Rs using the formula from the website
+          
+            // Calibrate MQ135; do in clean air then apply ammonia
+            //RoB = RsB/ratioB;
+            //Serial.print("MQ135 Ro: ");
+            //Serial.println(RoB);
+          
+            // Get PPM MQ135
+            double PPMB = pow(10, ((log10(RsB/RoB)-bB)/mB));//use formula to calculate ppm
+            Serial.print(PPMB);
+            Serial.print(", ");
 
+            myFile.print(PPMB);
+            myFile.print(", ");
+          
+          
+          ///Temperature Sensor Loop
+          
+           // Temp Sensor A
+           temp1 = analogRead(1); ////////////////////// ANALOG
+           temp1Volt = temp1*(5.0/1023);
+           temp1C = (temp1Volt - 0.5)/(0.01);
+           temp1F = (temp1C*(9.0/5.0) + 32);
+           Serial.print(temp1F);
+           Serial.print(", ");
 
+           myFile.print(temp1F);
+           myFile.print(", ");
+           
+           // Temp Sensor B 
+           temp2 = analogRead(2); ////////////////////// ANALOG
+           temp2Volt = temp2*(5.0/1023);
+           temp2C = (temp2Volt - 0.5)/(0.01);
+           temp2F = (temp2C*(9.0/5.0) + 32);
+           Serial.print(temp2F);
+           Serial.print(", ");
 
+           myFile.print(temp2F);
+           myFile.print(", ");
+          
+          
+          ///Pressure Sensor Loop
+           // Pressure Sensor A
+           pressureA = analogRead(3); ////////////////////// ANALOG
+           pressureVoltA = pressureA*(5.0/1023);
+           psiA = (pressureVoltB - 0.5)*(15.0/4.0);
+           Serial.print(psiA);
+           Serial.print(", ");
 
+           myFile.print(psiA);
+           myFile.print(", ");
+           
+           
+           // Pressure Sensor B 
+           pressureB = analogRead(4); ////////////////////// ANALOG
+           pressureVoltB = pressureB*(5.0/1023);
+           psiB = (pressureVoltB - 0.5)*(15.0/4.0);
+           Serial.print(psiB);
+           Serial.print(", ");
 
-//////////////////////////////////////////////////////
-     myFile.close();
+           myFile.print(psiB);
+           myFile.print(", ");
+           
+          
+          ///Hummidty Sensor Loop
+           humidity = analogRead(5); ////////////////////// ANALOG
+           humidityVolt = humidity*(5.0/1023);
+           RH = (((humidityVolt/5.0)-0.16)/0.0062);
+           Serial.print(RH);
+           Serial.print(", ");
 
-  /*
-   Battery Gauge Loop
-  */
+           myFile.print(RH);
+           myFile.print(", ");
+           
+          
+          ///Accelerameter  Loop
+           // X Accel
+           accelX = analogRead(6); ////////////////////// ANALOG
+           accelXVolt = accelX*(5.0/1023);
+           accelXG = (accelXVolt - (3.3/2))/(0.330);
+           Serial.print(accelXG);
+           Serial.print(", ");
+
+           myFile.print(accelXG);
+           myFile.print(", ");
+           
+           // Y Accel
+           accelY = analogRead(7); ////////////////////// ANALOG
+           accelYVolt = accelY*(5.0/1023);
+           accelYG = (accelYVolt - (3.3/2))/(0.330);
+           Serial.print(accelYG);
+           Serial.print(", ");
+
+           myFile.print(accelYG);
+           myFile.print(", ");
+           
+           // Z Accel
+           accelZ = analogRead(8); ////////////////////// ANALOG
+           accelZVolt = accelZ*(5.0/1023);
+           accelZG = (accelZVolt - (3.3/2))/(0.330);
+           Serial.print(accelZG);
+
+           myFile.print(accelZG);
+
+    }
+
+  Serial.println();
+  myFile.println();
+  
+  // Close the SD Card
+  myFile.close();
 
 }
