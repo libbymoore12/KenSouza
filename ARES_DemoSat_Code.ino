@@ -16,22 +16,45 @@ Updated 01/04/2017 for OpenLog
 #include <SPI.h>
 #include <SD.h>
 #include "MAX17043.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include "LowPower.h"
 
 
 /// Definitions
 
 // Analog Port Assignments
-int portAmmonia137 = 0;
+int portAmmonia137 = 1;
 int portAmmonia135 = 1;
-int portPresA = 2;
-int portPresB = 3;
-int portTempA = 4;
-int portTempB = 5;
+int portPresA = 0;
+int portPresB = 0;
+int portTempA = 3;
+int portTempB = 3;
 int portAccelX = 6;
 int portAccelY = 7;
 int portAccelZ = 8;
-int portHum = 9;
+int portHum = 2;
 
+//Digital Pin Assignments
+int JarDigitalPin = 8;
+
+ /*
+   Clock Definitions
+  */
+
+     #if defined(ARDUINO_ARCH_SAMD)
+     // for Zero, output on USB Serial console, remove line below if using programming port to program the Zero!
+        #define Serial SerialUSB
+     #endif
+
+     RTC_DS1307 rtc;
+     
+// CHANGE THIS TO DATE OF FLIGHT !!
+    float OVERRIDE = 5; //CHANGE TO 1 AT FLIGHT
+
+     char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+     float LaunchTime = 1564186020/OVERRIDE;
+     float LaunchTime24 = LaunchTime-(24*3600); //24 hours before launch
 
    /*
    Ammonia Sensor Definitions
@@ -58,6 +81,16 @@ int portHum = 9;
   /*
    Temperature Sensor Definitions
   */
+
+  // Data wire is plugged into pin 2 on the Arduino
+#define ONE_WIRE_BUS 2
+ 
+// Setup a oneWire instance to communicate with any OneWire devices 
+// (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+ 
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
   
    // Temp Sensor A
    int temp1;
@@ -111,23 +144,6 @@ int portHum = 9;
     int accelZ;
     float accelZVolt;
     float accelZG;
-
-  /*
-   Clock Definitions
-  */
-
-     #if defined(ARDUINO_ARCH_SAMD)
-     // for Zero, output on USB Serial console, remove line below if using programming port to program the Zero!
-        #define Serial SerialUSB
-     #endif
-
-     RTC_DS1307 rtc;
-     
-// CHANGE THIS TO DATE OF FLIGHT !!
-     char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-     int month = 7;
-     int day = 2;
-     int hour = 6;
       
   /*
    SD Card Definitions
@@ -148,7 +164,13 @@ void setup()
 {
   Wire.begin();
   Serial.begin(9600);
-
+  
+/*
+ * Temperature Setup
+ */
+ 
+   // Start up the library
+  sensors.begin();
   /*
    Clock Setup
   */
@@ -183,7 +205,7 @@ void setup()
   }
   Serial.print("Initializing SD card...");
 
-  if (!SD.begin(10)) {
+  if (!SD.begin(53)) {
     Serial.println("initialization failed!");
     return;
   }
@@ -199,12 +221,17 @@ void setup()
         Serial.println("Failed to Open File");
       }
 
-  Serial.println("Time, Battery (V), Battery (%), Tina (PPM), Trevor (PPM), TempA (F), TempB (F), PressA (psi), PressB (psi), Hum (%?), AccelX (m/s^2), AccelY (m/s^2), AccelZ (m/s^2)");
+  Serial.println("Time, Battery (V), Battery (%), Tina (PPM),Tina (Analog), Trevor (PPM), Trevor (Analog), TempA (F), TempB (F), PressA (psi), PressB (psi), Hum (%?), AccelX (m/s^2), AccelY (m/s^2), AccelZ (m/s^2)");
+
+   pinMode(8, OUTPUT);
 
 }
 
 
 void loop() {
+
+
+
 
 /// SD Card Loop
 
@@ -215,14 +242,46 @@ void loop() {
 
     DateTime now = rtc.now();
     timeStamp = now.unixtime(); 
-    
-    if(now.month() == month && now.day() == day && now.hour() >= hour)
+    //Check if more than 24 hours before
+      
+    if(now.unixtime() < LaunchTime24)
     {
+      Serial.print("Before Pre-heat Time...");
+      myFile.print("Before Pre-heat Time...");
+    //Don't turn on any sensors:
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+    
 
+    
+    }
+    
+    //  Check if 24 hours before
+    
+    if((now.unixtime()<LaunchTime) && (now.unixtime()>LaunchTime24))
+    {
+      Serial.print("Pre-heating...");
+      myFile.print("Pre-heating...");
+    //Turn on Ammonia Sensor here:
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+    digitalWrite(JarDigitalPin, HIGH);
+    //delay(1000);
+    //digitalWrite(JarDigitalPin, LOW);
 
-
+    
     }
 
+    //Check if Launch Time
+    
+    if(now.unixtime()>LaunchTime)
+    {
+      Serial.print("All Sensors on");
+    //Turn on all sensors here:
+    digitalWrite(JarDigitalPin, HIGH);
+    //delay(1000);
+    //digitalWrite(JarDigitalPin, LOW);
+    //delay(1000);
+    }
+   
 
   Serial.print(timeStamp);
   Serial.print(", ");
@@ -282,6 +341,12 @@ void loop() {
 
     myFile.print(PPM);
     myFile.print(", ");
+
+    Serial.print(analogRead(portAmmonia137));
+    Serial.print(", ");
+
+    myFile.print(analogRead(portAmmonia137));
+    myFile.print(", ");
   
     /// Trevor
     double analog_valueB = 0;
@@ -308,15 +373,23 @@ void loop() {
 
     myFile.print(PPMB);
     myFile.print(", ");
+
+    Serial.print(analogRead(portAmmonia135));
+    Serial.print(", ");
+
+    myFile.print(analogRead(portAmmonia135));
+    myFile.print(", ");
   
   
   ///Temperature Sensor Loop
+  sensors.requestTemperatures();
   
    // Temp Sensor A
-   temp1 = analogRead(portTempA); ////////////////////// ANALOG
-   temp1Volt = temp1*(5.0/1023);
-   temp1C = (temp1Volt - 0.5)/(0.01);
-   temp1F = (temp1C*(9.0/5.0) + 32);
+   //temp1 = analogRead(portTempA); ////////////////////// ANALOG
+   //temp1Volt = temp1*(5.0/1023);
+   //temp1C = (temp1Volt - 0.5)/(0.01);
+   //temp1F = (temp1C*(9.0/5.0) + 32);
+   temp1F = sensors.getTempFByIndex(portTempA);
    Serial.print(temp1F);
    Serial.print(", ");
 
@@ -324,10 +397,11 @@ void loop() {
    myFile.print(", ");
    
    // Temp Sensor B 
-   temp2 = analogRead(portTempB); ////////////////////// ANALOG
-   temp2Volt = temp2*(5.0/1023);
-   temp2C = (temp2Volt - 0.5)/(0.01);
-   temp2F = (temp2C*(9.0/5.0) + 32);
+   //temp2 = analogRead(portTempB); ////////////////////// ANALOG
+   //temp2Volt = temp2*(5.0/1023);
+   //temp2C = (temp2Volt - 0.5)/(0.01);
+   //temp2F = (temp2C*(9.0/5.0) + 32);
+   temp2F = sensors.getTempFByIndex(portTempB);
    Serial.print(temp2F);
    Serial.print(", ");
 
